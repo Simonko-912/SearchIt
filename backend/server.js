@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 const db = initDb();
-const _analytics = initAnalytics();
+initAnalytics();
 const crawler = new Crawler(db);
 
 // ── Startup migration: deduplicate www. and fix domains ──────────────────
@@ -73,19 +73,15 @@ setTimeout(async () => {
 app.use(cors());
 app.use(express.json());
 
-// ── Usage tracking middleware ─────────────────────────────────────────────
+// ── Usage tracking middleware ──────────────────────────────────────────────
 app.use((req, res, next) => {
-  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || '';
-  // Track page loads (HTML requests from browsers)
-  if (req.method === 'GET' && !req.path.startsWith('/api/') && !req.path.startsWith('/admin')) {
-    track('pageview', req.path, ip);
-  }
-  // Track searches
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '';
   if (req.method === 'GET' && req.path === '/api/search' && req.query.q) {
     track('search', req.query.q, ip);
-  }
-  if (req.method === 'GET' && req.path === '/api/search/images' && req.query.q) {
+  } else if (req.method === 'GET' && req.path === '/api/search/images' && req.query.q) {
     track('image_search', req.query.q, ip);
+  } else if (req.method === 'GET' && !req.path.startsWith('/api/') && !req.path.startsWith('/admin')) {
+    track('pageview', req.path, ip);
   }
   next();
 });
@@ -707,20 +703,13 @@ app.post('/admin-api/:token/danger/:action', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── GET /admin-api/:token/analytics ──────────────────────────────────────
+// ── Analytics ─────────────────────────────────────────────────────────────
 app.get('/admin-api/:token/analytics', async (req, res) => {
   const { ADMIN_TOKEN } = require('./admin-config');
   if (req.params.token !== ADMIN_TOKEN) return res.status(403).json({ error: 'Forbidden' });
   try {
-    const data = await getAnalytics();
-    res.json(data);
+    res.json(await getAnalytics());
   } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.get('/tos', (req, res) => {
-  const tosPath = path.join(__dirname, '..', 'frontend', 'public', 'tos.html');
-  if (fs.existsSync(tosPath)) return res.sendFile(tosPath);
-  res.status(404).send('tos.html not found');
 });
 
 app.get('*', (req, res) => {
