@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScrapeIt Admin</title>
+<style>
+:root {
+  --bg:      #0d0d0c;
+  --bg2:     #161614;
+  --bg3:     #1e1e1c;
+  --bg4:     #252522;
+  --border:  #2a2a27;
+  --border2: #363633;
+  --text:    #e8e8e4;
+  --text2:   #9a9a94;
+  --text3:   #5a5a56;
+  --accent:  #4a8aff;
+  --green:   #22c55e;
+  --red:     #ef4444;
+  --yellow:  #f59e0b;
+  --orange:  #f97316;
+  --mono:    'DM Mono', 'Fira Mono', monospace;
+  --font:    system-ui, sans-serif;
+  --r:       6px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+}
+.sidebar-logo {
+  padding: 20px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.sidebar-logo-icon { font-size: 1.2rem; color: var(--accent); }
+.sidebar-logo-text { font-size: 1rem; font-weight: 600; letter-spacing: -0.02em; }
+.sidebar-logo-badge {
+  margin-left: auto;
+  font-size: 0.65rem;
+  background: var(--bg4);
+  color: var(--text3);
+  padding: 2px 6px;
+  border-radius: 99px;
+  font-family: var(--mono);
+  border: 1px solid var(--border2);
+}
+.sidebar-nav { flex: 1; padding: 8px 0; overflow-y: auto; }
+.nav-section-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text3);
+  padding: 12px 16px 4px;
+  font-weight: 600;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 16px;
+  color: var(--text2);
+  cursor: pointer;
+  border-radius: 0;
+  font-size: 0.88rem;
+  transition: background 0.1s, color 0.1s;
+  border-left: 2px solid transparent;
+  user-select: none;
+}
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: var(--bg3); color: var(--accent); border-left-color: var(--accent); }
+.nav-item svg { flex-shrink: 0; opacity: 0.7; }
+.nav-item.active svg { opacity: 1; }
+
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text3);
+}
+.sidebar-footer a { color: var(--accent); text-decoration: none; }
+
+/* ── Main ── */
+.main {
+  margin-left: 220px;
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  height: 50px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 24px;
+  gap: 12px;
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar-title { font-size: 0.9rem; font-weight: 600; }
+.topbar-sub { font-size: 0.8rem; color: var(--text3); font-family: var(--mono); }
+.topbar-spacer { flex: 1; }
+.status-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  font-size: 0.75rem; color: var(--text2);
+}
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+.status-dot.running { background: var(--green); box-shadow: 0 0 4px var(--green); animation: pulse 2s infinite; }
+.status-dot.paused  { background: var(--yellow); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.content { padding: 24px; flex: 1; }
+
+/* ── Panels ── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── Cards ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 16px;
+}
+.card-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.85rem; font-weight: 600;
+}
+.card-header svg { color: var(--accent); flex-shrink: 0; }
+.card-header-right { margin-left: auto; display: flex; gap: 8px; }
+.card-body { padding: 16px; }
+
+/* ── Stat grid ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.stat-tile {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+}
+.stat-tile-val {
+  font-size: 1.6rem; font-weight: 600;
+  font-family: var(--mono);
+  color: var(--text);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-tile-label { font-size: 0.72rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ── Usage bars ── */
+.usage-row {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 10px; font-size: 0.82rem;
+}
+.usage-label { width: 60px; color: var(--text2); flex-shrink: 0; }
+.usage-bar-wrap { flex: 1; height: 6px; background: var(--bg4); border-radius: 99px; overflow: hidden; }
+.usage-bar { height: 100%; border-radius: 99px; transition: width 0.4s; background: var(--accent); }
+.usage-bar.warn  { background: var(--yellow); }
+.usage-bar.crit  { background: var(--red); }
+.usage-val { width: 50px; text-align: right; color: var(--text2); font-family: var(--mono); font-size: 0.78rem; }
+
+/* ── Table ── */
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.data-table th {
+  text-align: left; padding: 8px 10px;
+  font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  max-width: 300px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--bg3); }
+.mono { font-family: var(--mono); font-size: 0.78rem; color: var(--text2); }
+.url-cell { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.url-cell a { color: var(--accent); text-decoration: none; }
+.url-cell a:hover { text-decoration: underline; }
+
+/* ── Badges ── */
+.badge {
+  display: inline-block; padding: 2px 7px; border-radius: 99px;
+  font-size: 0.7rem; font-weight: 600; white-space: nowrap;
+}
+.badge-done    { background: #14532d; color: #86efac; }
+.badge-pending { background: #422006; color: #fde68a; }
+.badge-crawling{ background: #1e3a5f; color: #93c5fd; }
+.badge-error   { background: #450a0a; color: #fca5a5; }
+.badge-blue    { background: #1e3a5f; color: #93c5fd; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: var(--r);
+  border: 1px solid var(--border2);
+  background: var(--bg3); color: var(--text2);
+  font-size: 0.8rem; font-family: var(--font);
+  cursor: pointer; transition: all 0.12s; white-space: nowrap;
+}
+.btn:hover { border-color: var(--border2); color: var(--text); background: var(--bg4); }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: #3a7aef; border-color: #3a7aef; color: #fff; }
+.btn-danger  { color: var(--red); border-color: #450a0a; }
+.btn-danger:hover  { background: #450a0a; color: #fca5a5; }
+.btn-warn  { color: var(--yellow); border-color: #422006; }
+.btn-warn:hover  { background: #422006; color: #fde68a; }
+.btn-green { color: var(--green); border-color: #14532d; }
+.btn-green:hover { background: #14532d; color: #86efac; }
+.btn-sm { padding: 4px 8px; font-size: 0.75rem; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Forms ── */
+.form-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 10px; }
+.form-input {
+  flex: 1; background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--text); border-radius: var(--r);
+  padding: 7px 10px; font-size: 0.82rem; font-family: var(--font);
+  outline: none;
+}
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--text3); }
+.form-select {
+  background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--text); border-radius: var(--r);
+  padding: 7px 10px; font-size: 0.82rem; font-family: var(--font);
+  outline: none; cursor: pointer;
+}
+.form-label { font-size: 0.78rem; color: var(--text3); margin-bottom: 5px; display: block; }
+.form-group { margin-bottom: 14px; }
+
+/* ── Log / console ── */
+.log-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--green);
+  min-height: 120px;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.6;
+}
+.log-line { color: var(--text2); }
+.log-line.ok  { color: var(--green); }
+.log-line.err { color: var(--red); }
+.log-line.warn{ color: var(--yellow); }
+.log-line.info{ color: var(--accent); }
+
+/* ── Schedule ── */
+.schedule-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+.schedule-row:last-child { border-bottom: none; }
+
+/* ── Pagination ── */
+.pagination { display: flex; gap: 4px; margin-top: 12px; }
+.pag-btn {
+  min-width: 30px; height: 28px; padding: 0 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--text2); font-size: 0.78rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font);
+}
+.pag-btn:hover { border-color: var(--accent); color: var(--accent); }
+.pag-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pag-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Misc ── */
+.section-gap { margin-bottom: 20px; }
+.text-red { color: var(--red); }
+.text-green { color: var(--green); }
+.text-yellow { color: var(--yellow); }
+.text-muted { color: var(--text3); }
+.row { display: flex; gap: 16px; align-items: flex-start; }
+.col { flex: 1; min-width: 0; }
+.empty { text-align: center; color: var(--text3); padding: 28px; font-size: 0.85rem; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.flex { display: flex; align-items: center; gap: 8px; }
+.ml-auto { margin-left: auto; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span class="sidebar-logo-icon">◎</span>
+    <span class="sidebar-logo-text">ScrapeIt</span>
+    <span class="sidebar-logo-badge">ADMIN</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active" onclick="showPanel('dashboard')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showPanel('system')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      System Usage
+    </div>
+
+    <div class="nav-section-label">Crawler</div>
+    <div class="nav-item" onclick="showPanel('sites')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Manage Sites
+    </div>
+    <div class="nav-item" onclick="showPanel('schedule')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Crawl Schedule
+    </div>
+    <div class="nav-item" onclick="showPanel('queue')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      Crawl Queue
+    </div>
+
+    <div class="nav-section-label">Maintenance</div>
+    <div class="nav-item" onclick="showPanel('debug')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 8v4M12 16h.01"/></svg>
+      Debug Commands
+    </div>
+    <div class="nav-item" onclick="showPanel('danger')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      Danger Zone
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="/" target="_blank">← Back to ScrapeIt</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <span class="topbar-title" id="panel-title">Dashboard</span>
+    <span class="topbar-sub" id="panel-sub"></span>
+    <div class="topbar-spacer"></div>
+    <div class="status-pill">
+      <div class="status-dot" id="crawler-dot"></div>
+      <span id="crawler-pill-label">—</span>
+    </div>
+    <button class="btn btn-sm" id="crawler-toggle-btn" onclick="toggleCrawler()">—</button>
+    <button class="btn btn-sm" onclick="refreshAll()">↻ Refresh</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="stat-grid" id="dash-stats"></div>
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+              Status Breakdown
+            </div>
+            <div class="card-body" id="dash-breakdown"></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card">
+            <div class="card-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+              Top Domains
+            </div>
+            <div class="card-body" id="dash-domains"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Recently Indexed
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="data-table" id="dash-recent">
+            <thead><tr><th>URL</th><th>Title</th><th>Indexed</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SYSTEM USAGE ── -->
+    <div class="panel" id="panel-system">
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+              Resource Usage
+              <div class="card-header-right"><button class="btn btn-sm" onclick="loadSystem()">↻</button></div>
+            </div>
+            <div class="card-body" id="system-bars">
+              <p class="text-muted">Loading…</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              Process Info
+            </div>
+            <div class="card-body" id="system-proc">
+              <p class="text-muted">Loading…</p>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card">
+            <div class="card-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+              Database
+            </div>
+            <div class="card-body" id="system-db">
+              <p class="text-muted">Loading…</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MANAGE SITES ── -->
+    <div class="panel" id="panel-sites">
+      <div class="card">
+        <div class="card-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Sites
+          <div class="card-header-right">
+            <input class="form-input" id="sites-search" placeholder="Filter…" style="width:180px" oninput="loadSitesAdmin(1)">
+            <select class="form-select" id="sites-status-filter" onchange="loadSitesAdmin(1)">
+              <option value="">All</option>
+              <option value="done">Indexed</option>
+              <option value="pending">Pending</option>
+              <option value="crawling">Crawling</option>
+              <option value="error">Error</option>
+            </select>
+            <button class="btn btn-sm btn-warn" onclick="recrawlSelected()">↻ Recrawl Selected</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteFiltered()">Delete Filtered</button>
+          </div>
+        </div>
+        <div style="padding:0">
+          <table class="data-table">
+            <thead><tr><th><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)"></th><th>URL</th><th>Status</th><th>Depth</th><th>Crawled</th><th>Priority</th><th>Actions</th></tr></thead>
+            <tbody id="sites-tbody"></tbody>
+          </table>
+        </div>
+        <div class="card-body" style="padding: 10px 16px; border-top: 1px solid var(--border); display:flex; gap:8px; align-items:center">
+          <span class="text-muted" id="sites-count-label"></span>
+          <div class="ml-auto" id="sites-pagination"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CRAWL SCHEDULE ── -->
+    <div class="panel" id="panel-schedule">
+      <div class="card">
+        <div class="card-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Add Crawl Schedule
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">URL or Domain</label>
+            <div class="form-row">
+              <input class="form-input" id="sched-url" placeholder="https://example.com">
+              <select class="form-select" id="sched-interval">
+                <option value="3600">Every hour</option>
+                <option value="21600">Every 6 hours</option>
+                <option value="43200">Every 12 hours</option>
+                <option value="86400" selected>Every 24 hours</option>
+                <option value="259200">Every 3 days</option>
+                <option value="604800">Every week</option>
+              </select>
+              <button class="btn btn-primary" onclick="addSchedule()">Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          Active Schedules
+        </div>
+        <div class="card-body" id="schedule-list">
+          <p class="text-muted" style="text-align:center;padding:16px 0">No schedules yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CRAWL QUEUE ── -->
+    <div class="panel" id="panel-queue">
+      <div class="card">
+        <div class="card-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          Crawl Queue
+          <div class="card-header-right">
+            <button class="btn btn-sm btn-warn" onclick="clearQueue()">Clear Queue</button>
+            <button class="btn btn-sm" onclick="loadQueue()">↻</button>
+          </div>
+        </div>
+        <div style="padding:0">
+          <table class="data-table">
+            <thead><tr><th>URL</th><th>Depth</th><th>Priority</th><th>Added</th><th></th></tr></thead>
+            <tbody id="queue-tbody"></tbody>
+          </table>
+        </div>
+        <div class="card-body" style="padding:10px 16px;border-top:1px solid var(--border)">
+          <span class="text-muted" id="queue-count-label"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DEBUG ── -->
+    <div class="panel" id="panel-debug">
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              Debug Commands
+            </div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <button class="btn" onclick="runDebug('dedup')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                  Deduplicate www. entries
+                </button>
+                <button class="btn" onclick="runDebug('requeue-errors')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.36"/></svg>
+                  Re-queue all errored sites
+                </button>
+                <button class="btn" onclick="runDebug('requeue-all')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.36"/></svg>
+                  Re-queue all sites (force recrawl)
+                </button>
+                <button class="btn" onclick="runDebug('fix-domains')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Fix domain column (strip www.)
+                </button>
+                <button class="btn" onclick="runDebug('count-dupes')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 8v4M12 16h.01"/></svg>
+                  Count duplicate URLs
+                </button>
+                <button class="btn" onclick="runDebug('vacuum')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  Vacuum database (compact)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card" style="height:100%">
+            <div class="card-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+              Output
+              <div class="card-header-right"><button class="btn btn-sm" onclick="document.getElementById('debug-log').textContent=''">Clear</button></div>
+            </div>
+            <div class="card-body">
+              <div class="log-box" id="debug-log">Ready.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Raw SQL Query (read-only SELECT)
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <input class="form-input" id="sql-input" placeholder="SELECT COUNT(*) FROM sites WHERE status='error'" style="font-family:var(--mono)">
+            <button class="btn btn-primary" onclick="runSql()">Run</button>
+          </div>
+          <div class="log-box" id="sql-output" style="margin-top:10px;color:var(--text2)">Results will appear here.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DANGER ZONE ── -->
+    <div class="panel" id="panel-danger">
+      <div class="card" style="border-color:#450a0a">
+        <div class="card-header" style="border-color:#450a0a;color:var(--red)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+          Danger Zone — Irreversible Actions
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border2)">
+            <div>
+              <div style="font-weight:600;margin-bottom:3px">Delete all errored sites</div>
+              <div class="text-muted">Removes all sites with status=error from the index.</div>
+            </div>
+            <button class="btn btn-danger" onclick="dangerAction('delete-errors')">Delete Errors</button>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border2)">
+            <div>
+              <div style="font-weight:600;margin-bottom:3px">Delete all images</div>
+              <div class="text-muted">Wipes the entire image index. Sites remain.</div>
+            </div>
+            <button class="btn btn-danger" onclick="dangerAction('delete-images')">Delete Images</button>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border2)">
+            <div>
+              <div style="font-weight:600;margin-bottom:3px">Clear crawl queue</div>
+              <div class="text-muted">Removes all pending URLs from the queue. Crawler goes idle.</div>
+            </div>
+            <button class="btn btn-danger" onclick="dangerAction('clear-queue')">Clear Queue</button>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:var(--r);border:1px solid #7f1d1d">
+            <div>
+              <div style="font-weight:600;margin-bottom:3px;color:var(--red)">Wipe entire index</div>
+              <div class="text-muted">Deletes ALL sites, images, links, and queue. Cannot be undone.</div>
+            </div>
+            <button class="btn btn-danger" onclick="dangerAction('wipe-all')">Wipe All Data</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// Token is injected by the server into the page
+const ADMIN_TOKEN = document.currentScript ? '' : '';
+// We extract the token from the URL path: /admin/<token>/
+const TOKEN = window.location.pathname.split('/').filter(Boolean)[1] || '';
+const API = window.location.origin + '/admin-api/' + TOKEN;
+
+// ── Navigation ────────────────────────────────────────────────────────────
+const PANEL_TITLES = {
+  dashboard: 'Dashboard',
+  system: 'System Usage',
+  sites: 'Manage Sites',
+  schedule: 'Crawl Schedule',
+  queue: 'Crawl Queue',
+  debug: 'Debug Commands',
+  danger: 'Danger Zone',
+};
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + name + "'")) {
+      n.classList.add('active');
+    }
+  });
+  document.getElementById('panel-title').textContent = PANEL_TITLES[name] || name;
+  document.getElementById('panel-sub').textContent = '';
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'system')    loadSystem();
+  if (name === 'sites')     loadSitesAdmin(1);
+  if (name === 'schedule')  loadSchedule();
+  if (name === 'queue')     loadQueue();
+}
+
+// ── API helper ────────────────────────────────────────────────────────────
+async function api(endpoint, method = 'GET', body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + endpoint, opts);
+  return res.json();
+}
+
+function fmt(n) {
+  if (n == null) return '—';
+  n = Number(n);
+  if (n < 10000) return n.toLocaleString();
+  if (n < 1000000) return (n / 1000).toFixed(n < 100000 ? 1 : 0) + 'k';
+  return (n / 1000000).toFixed(1) + 'm';
+}
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const d = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+  if (d < 60) return d + 's ago';
+  if (d < 3600) return Math.floor(d/60) + 'm ago';
+  if (d < 86400) return Math.floor(d/3600) + 'h ago';
+  return Math.floor(d/86400) + 'd ago';
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function statusBadge(s) {
+  const m = {done:'badge-done',pending:'badge-pending',crawling:'badge-crawling',error:'badge-error'};
+  return `<span class="badge ${m[s]||'badge-blue'}">${esc(s)}</span>`;
+}
+
+// ── Crawler status bar ────────────────────────────────────────────────────
+let crawlerRunning = false;
+async function updateCrawlerBar() {
+  try {
+    const d = await api('/stats');
+    crawlerRunning = d.crawlerRunning;
+    const dot = document.getElementById('crawler-dot');
+    const lbl = document.getElementById('crawler-pill-label');
+    const btn = document.getElementById('crawler-toggle-btn');
+    dot.className = 'status-dot ' + (d.crawlerRunning ? 'running' : 'paused');
+    lbl.textContent = d.crawlerRunning
+      ? (d.activeTasks > 0 ? d.activeTasks + ' crawling' : 'idle')
+      : 'paused';
+    btn.textContent = d.crawlerRunning ? 'Pause' : 'Resume';
+    // Update queue badge in sidebar
+    const badge = document.querySelector('.sidebar-logo-badge');
+    if (d.queueSize > 0) badge.textContent = fmt(d.queueSize) + ' queued';
+    else badge.textContent = 'ADMIN';
+  } catch {}
+}
+async function toggleCrawler() {
+  await api(crawlerRunning ? '/crawler/pause' : '/crawler/resume', 'POST');
+  updateCrawlerBar();
+}
+function refreshAll() {
+  updateCrawlerBar();
+  const active = document.querySelector('.panel.active');
+  if (active) {
+    const id = active.id.replace('panel-', '');
+    showPanel(id);
+  }
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const d = await api('/stats');
+  const failedEntry = (d.statusBreakdown||[]).find(s => s.status === 'error');
+  const tiles = [
+    { val: fmt(d.doneSites),    label: 'Indexed Sites' },
+    { val: fmt(d.totalSites),   label: 'Total Sites' },
+    { val: fmt(d.totalImages),  label: 'Images' },
+    { val: fmt(d.totalLinks),   label: 'Links' },
+    { val: fmt(d.queueSize),    label: 'Queue Size' },
+    { val: fmt(d.activeTasks),  label: 'Active Tasks' },
+    { val: fmt(failedEntry ? failedEntry.count : 0), label: 'Errors' },
+    { val: (d.topDomains||[]).length, label: 'Top Domains' },
+  ];
+  document.getElementById('dash-stats').innerHTML = tiles.map(t => `
+    <div class="stat-tile">
+      <div class="stat-tile-val">${t.val}</div>
+      <div class="stat-tile-label">${t.label}</div>
+    </div>`).join('');
+
+  // Breakdown bars
+  const total = (d.statusBreakdown||[]).reduce((a,b) => a + b.count, 0) || 1;
+  document.getElementById('dash-breakdown').innerHTML = (d.statusBreakdown||[]).map(s => {
+    const pct = Math.round(s.count / total * 100);
+    return `<div class="usage-row">
+      <span class="usage-label">${esc(s.status)}</span>
+      <div class="usage-bar-wrap"><div class="usage-bar" style="width:${pct}%"></div></div>
+      <span class="usage-val">${s.count}</span>
+    </div>`;
+  }).join('') || '<p class="text-muted">No data.</p>';
+
+  // Top domains
+  const maxCount = (d.topDomains||[])[0]?.count || 1;
+  document.getElementById('dash-domains').innerHTML = (d.topDomains||[]).map(td => `
+    <div class="usage-row">
+      <span class="usage-label" style="width:130px;max-width:130px;overflow:hidden;text-overflow:ellipsis" title="${esc(td.domain)}">${esc(td.domain)}</span>
+      <div class="usage-bar-wrap"><div class="usage-bar" style="width:${Math.round(td.count/maxCount*100)}%"></div></div>
+      <span class="usage-val">${td.count}</span>
+    </div>`).join('') || '<p class="text-muted">No data.</p>';
+
+  // Recent
+  const tbody = document.querySelector('#dash-recent tbody');
+  tbody.innerHTML = (d.recentSites||[]).map(s => `
+    <tr>
+      <td class="url-cell"><a href="${esc(s.url)}" target="_blank">${esc(s.url)}</a></td>
+      <td class="mono">${esc(s.title||'—')}</td>
+      <td class="mono">${timeAgo(s.scraped_at)}</td>
+    </tr>`).join('') || '<tr><td colspan="3" class="empty">None yet.</td></tr>';
+}
+
+// ── System Usage ──────────────────────────────────────────────────────────
+async function loadSystem() {
+  const d = await api('/system');
+  // Usage bars
+  const cpuColor = d.cpu > 80 ? 'crit' : d.cpu > 60 ? 'warn' : '';
+  const ramColor = d.ramPct > 85 ? 'crit' : d.ramPct > 65 ? 'warn' : '';
+  const diskColor = d.diskPct > 90 ? 'crit' : d.diskPct > 75 ? 'warn' : '';
+  document.getElementById('system-bars').innerHTML = `
+    <div class="usage-row">
+      <span class="usage-label">CPU</span>
+      <div class="usage-bar-wrap"><div class="usage-bar ${cpuColor}" style="width:${d.cpu||0}%"></div></div>
+      <span class="usage-val">${(d.cpu||0).toFixed(1)}%</span>
+    </div>
+    <div class="usage-row">
+      <span class="usage-label">RAM</span>
+      <div class="usage-bar-wrap"><div class="usage-bar ${ramColor}" style="width:${d.ramPct||0}%"></div></div>
+      <span class="usage-val">${d.ramUsed||'—'}</span>
+    </div>
+    <div class="usage-row">
+      <span class="usage-label">Disk</span>
+      <div class="usage-bar-wrap"><div class="usage-bar ${diskColor}" style="width:${d.diskPct||0}%"></div></div>
+      <span class="usage-val">${d.diskUsed||'—'}</span>
+    </div>`;
+
+  // Process info
+  document.getElementById('system-proc').innerHTML = `
+    <div class="usage-row"><span class="usage-label" style="width:120px">Node version</span><span class="mono">${esc(d.nodeVersion||'—')}</span></div>
+    <div class="usage-row"><span class="usage-label" style="width:120px">Process uptime</span><span class="mono">${esc(d.uptime||'—')}</span></div>
+    <div class="usage-row"><span class="usage-label" style="width:120px">Heap used</span><span class="mono">${esc(d.heapUsed||'—')}</span></div>
+    <div class="usage-row"><span class="usage-label" style="width:120px">Heap total</span><span class="mono">${esc(d.heapTotal||'—')}</span></div>
+    <div class="usage-row"><span class="usage-label" style="width:120px">Platform</span><span class="mono">${esc(d.platform||'—')}</span></div>`;
+
+  // DB info
+  document.getElementById('system-db').innerHTML = `
+    <div class="usage-row"><span class="usage-label" style="width:120px">DB size</span><span class="mono">${esc(d.dbSize||'—')}</span></div>
+    <div class="usage-row"><span class="usage-label" style="width:120px">DB path</span><span class="mono" style="word-break:break-all;color:var(--text3);font-size:0.72rem">${esc(d.dbPath||'—')}</span></div>`;
+}
+
+// ── Manage Sites ──────────────────────────────────────────────────────────
+let sitesPage = 1;
+async function loadSitesAdmin(page) {
+  sitesPage = page || sitesPage;
+  const q = document.getElementById('sites-search').value.trim();
+  const status = document.getElementById('sites-status-filter').value;
+  const params = new URLSearchParams({ page: sitesPage, limit: 25 });
+  if (q) params.set('q', q);
+  if (status) params.set('status', status);
+  const d = await api('/sites?' + params);
+  const sites = d.sites || [];
+  document.getElementById('sites-count-label').textContent = `${fmt(d.total)} sites`;
+
+  const tbody = document.getElementById('sites-tbody');
+  tbody.innerHTML = sites.map(s => `
+    <tr id="site-row-${s.id}">
+      <td><input type="checkbox" class="site-check" data-id="${s.id}"></td>
+      <td class="url-cell"><a href="${esc(s.url)}" target="_blank">${esc(s.url)}</a></td>
+      <td>${statusBadge(s.status)}</td>
+      <td class="mono">${s.crawl_depth}</td>
+      <td class="mono">${timeAgo(s.scraped_at)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:4px">
+          <input type="number" class="form-input priority-input" value="${s.queue_priority || ''}"
+            placeholder="—" min="1" max="99999" step="100"
+            style="width:70px;padding:3px 6px;font-size:0.75rem;font-family:var(--mono)"
+            title="Set crawl priority (higher = sooner). Seed default = 10000."
+            onchange="setPriority(${s.id}, this.value)">
+        </div>
+      </td>
+      <td>
+        <button class="btn btn-sm btn-green" onclick="recrawlSite(${s.id}, this)" title="Re-crawl at current priority">↻ Recrawl</button>
+        <button class="btn btn-sm btn-warn" onclick="recrawlSiteNow(${s.id}, this)" title="Force to front of queue (max priority)">⚡ Now</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSite(${s.id}, this)" title="Delete">✕</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" class="empty">No sites found.</td></tr>';
+
+  // Pagination
+  const pages = Math.ceil(d.total / 25);
+  const pagEl = document.getElementById('sites-pagination');
+  pagEl.innerHTML = '';
+  if (pages > 1) {
+    const mk = (label, pg, disabled, active) => {
+      const b = document.createElement('button');
+      b.className = 'pag-btn' + (active ? ' active' : '');
+      b.textContent = label; b.disabled = disabled;
+      if (!disabled && !active) b.onclick = () => loadSitesAdmin(pg);
+      pagEl.appendChild(b);
+    };
+    mk('‹', sitesPage-1, sitesPage===1);
+    for (let i = Math.max(1,sitesPage-2); i <= Math.min(pages, sitesPage+2); i++) mk(i,i,false,i===sitesPage);
+    mk('›', sitesPage+1, sitesPage===pages);
+  }
+}
+async function deleteSite(id, btn) {
+  if (!confirm('Delete this site?')) return;
+  btn.disabled = true;
+  await api('/sites/' + id, 'DELETE');
+  loadSitesAdmin();
+}
+async function recrawlSite(id, btn) {
+  btn.disabled = true;
+  // Use whatever priority is in the input, or default seed priority
+  const row = document.getElementById('site-row-' + id);
+  const inp = row ? row.querySelector('.priority-input') : null;
+  const priority = inp && inp.value ? parseInt(inp.value) : 10000;
+  await api('/sites/' + id + '/recrawl', 'POST', { priority });
+  btn.disabled = false;
+  loadSitesAdmin();
+}
+
+async function recrawlSiteNow(id, btn) {
+  btn.disabled = true;
+  // Enqueue at maximum priority — jumps to absolute front of queue
+  await api('/sites/' + id + '/recrawl', 'POST', { priority: 99999 });
+  btn.disabled = false;
+  loadSitesAdmin();
+  logDebug('Site ' + id + ' pushed to front of queue (priority 99999)', 'ok');
+}
+
+async function setPriority(id, value) {
+  const priority = parseInt(value);
+  if (!priority || priority < 1) return;
+  const d = await api('/sites/' + id + '/priority', 'POST', { priority });
+  if (d.success) {
+    logDebug('Priority set to ' + priority + ' for site ' + id, 'ok');
+  }
+}
+
+// Bulk recrawl selected at chosen priority
+async function recrawlSelected() {
+  const checked = [...document.querySelectorAll('.site-check:checked')].map(c => c.dataset.id);
+  if (checked.length === 0) { alert('Select sites first.'); return; }
+  const priority = parseInt(prompt('Enter priority (default 10000, max 99999):', '10000'));
+  if (!priority) return;
+  for (const id of checked) {
+    await api('/sites/' + id + '/recrawl', 'POST', { priority });
+  }
+  logDebug('Re-queued ' + checked.length + ' sites at priority ' + priority, 'ok');
+  loadSitesAdmin();
+}
+function toggleSelectAll(cb) {
+  document.querySelectorAll('.site-check').forEach(c => c.checked = cb.checked);
+}
+async function deleteFiltered() {
+  const checked = [...document.querySelectorAll('.site-check:checked')].map(c => c.dataset.id);
+  if (checked.length === 0) { alert('Select sites first (use checkboxes).'); return; }
+  if (!confirm(`Delete ${checked.length} selected site(s)?`)) return;
+  for (const id of checked) await api('/sites/' + id, 'DELETE');
+  loadSitesAdmin();
+}
+
+// ── Schedule ──────────────────────────────────────────────────────────────
+const schedules = JSON.parse(localStorage.getItem('scrapeit-schedules') || '[]');
+function saveSchedules() { localStorage.setItem('scrapeit-schedules', JSON.stringify(schedules)); }
+
+function addSchedule() {
+  const url = document.getElementById('sched-url').value.trim();
+  const interval = parseInt(document.getElementById('sched-interval').value);
+  if (!url) return;
+  const id = Date.now();
+  const nextRun = Date.now() + interval * 1000;
+  schedules.push({ id, url, interval, nextRun, label: document.getElementById('sched-interval').selectedOptions[0].text });
+  saveSchedules();
+  document.getElementById('sched-url').value = '';
+  loadSchedule();
+  logDebug('Scheduled: ' + url + ' — ' + document.getElementById('sched-interval').selectedOptions[0].text, 'ok');
+}
+function loadSchedule() {
+  const el = document.getElementById('schedule-list');
+  if (schedules.length === 0) {
+    el.innerHTML = '<p class="text-muted" style="text-align:center;padding:16px 0">No schedules yet.</p>';
+    return;
+  }
+  el.innerHTML = schedules.map(s => `
+    <div class="schedule-row">
+      <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono);font-size:0.78rem;color:var(--accent)">${esc(s.url)}</div>
+      <span class="badge badge-blue" style="margin:0 8px">${esc(s.label)}</span>
+      <span class="text-muted" style="font-size:0.75rem;white-space:nowrap">next: ${timeAgo(-(s.nextRun - Date.now()))}</span>
+      <button class="btn btn-sm btn-green" style="margin-left:8px" onclick="runScheduleNow(${s.id})">▶ Now</button>
+      <button class="btn btn-sm btn-danger" style="margin-left:4px" onclick="removeSchedule(${s.id})">✕</button>
+    </div>`).join('');
+}
+async function runScheduleNow(id) {
+  const s = schedules.find(x => x.id === id);
+  if (!s) return;
+  await api('/sites', 'POST', { url: s.url });
+  s.nextRun = Date.now() + s.interval * 1000;
+  saveSchedules();
+  logDebug('Manually triggered crawl for ' + s.url, 'ok');
+  loadSchedule();
+}
+function removeSchedule(id) {
+  const idx = schedules.findIndex(s => s.id === id);
+  if (idx !== -1) schedules.splice(idx, 1);
+  saveSchedules();
+  loadSchedule();
+}
+// Tick schedules every minute
+setInterval(async () => {
+  let changed = false;
+  for (const s of schedules) {
+    if (Date.now() >= s.nextRun) {
+      await api('/sites', 'POST', { url: s.url });
+      s.nextRun = Date.now() + s.interval * 1000;
+      changed = true;
+      logDebug('Auto-crawl triggered: ' + s.url, 'info');
+    }
+  }
+  if (changed) saveSchedules();
+}, 60000);
+
+// ── Queue ─────────────────────────────────────────────────────────────────
+async function loadQueue() {
+  const d = await api('/queue');
+  const rows = d.queue || [];
+  document.getElementById('queue-count-label').textContent = fmt(d.total) + ' URLs in queue';
+  document.getElementById('queue-tbody').innerHTML = rows.map(r => `
+    <tr>
+      <td class="url-cell mono" style="max-width:380px">${esc(r.url)}</td>
+      <td class="mono">${r.depth}</td>
+      <td class="mono">${r.priority}</td>
+      <td class="mono">${timeAgo(r.added_at)}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="removeFromQueue(${r.id}, this)">✕</button></td>
+    </tr>`).join('') || '<tr><td colspan="5" class="empty">Queue is empty.</td></tr>';
+}
+async function removeFromQueue(id, btn) {
+  btn.disabled = true;
+  await api('/queue/' + id, 'DELETE');
+  loadQueue();
+}
+async function clearQueue() {
+  if (!confirm('Clear the entire crawl queue?')) return;
+  await api('/queue', 'DELETE');
+  loadQueue();
+}
+
+// ── Debug ─────────────────────────────────────────────────────────────────
+function logDebug(msg, type) {
+  const el = document.getElementById('debug-log');
+  const line = document.createElement('div');
+  line.className = 'log-line ' + (type || '');
+  line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+async function runDebug(cmd) {
+  logDebug('Running: ' + cmd + '…', 'info');
+  try {
+    const d = await api('/debug/' + cmd, 'POST');
+    logDebug(JSON.stringify(d, null, 2), d.error ? 'err' : 'ok');
+  } catch (e) {
+    logDebug('Error: ' + e.message, 'err');
+  }
+}
+async function runSql() {
+  const sql = document.getElementById('sql-input').value.trim();
+  if (!sql) return;
+  const out = document.getElementById('sql-output');
+  out.textContent = 'Running…';
+  try {
+    const d = await api('/debug/sql', 'POST', { sql });
+    if (d.error) { out.textContent = 'Error: ' + d.error; return; }
+    if (Array.isArray(d.rows)) {
+      out.textContent = d.rows.length === 0 ? '(no rows)' : d.rows.map(r => JSON.stringify(r)).join('\n');
+    } else {
+      out.textContent = JSON.stringify(d, null, 2);
+    }
+  } catch (e) {
+    out.textContent = 'Error: ' + e.message;
+  }
+}
+
+// ── Danger Zone ───────────────────────────────────────────────────────────
+async function dangerAction(action) {
+  const labels = {
+    'delete-errors': 'delete all errored sites',
+    'delete-images': 'delete ALL images',
+    'clear-queue':   'clear the crawl queue',
+    'wipe-all':      'WIPE ALL DATA (sites, images, links, queue)',
+  };
+  if (!confirm('Are you sure you want to ' + (labels[action]||action) + '?\n\nThis cannot be undone.')) return;
+  if (action === 'wipe-all' && !confirm('FINAL WARNING: This will delete everything. Are you absolutely sure?')) return;
+  const d = await api('/danger/' + action, 'POST');
+  alert(d.message || JSON.stringify(d));
+  loadDashboard();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+updateCrawlerBar();
+setInterval(updateCrawlerBar, 5000);
+loadDashboard();
+</script>
+</body>
+</html>

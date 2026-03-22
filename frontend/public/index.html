@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScrapeIt Search</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header id="header">
+  <div class="header-inner">
+    <a class="logo" href="#" onclick="showPage('home')">Scrape<span>It</span></a>
+
+    <div class="header-search" id="header-search-wrap">
+      <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="header-search-input" placeholder="Search the web..." autocomplete="off">
+    </div>
+
+    <nav class="header-nav">
+      <button class="nav-btn" onclick="showPage('add')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Add Site
+      </button>
+      <button class="nav-btn" id="nav-sites-btn" onclick="showPage('sites')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Sites
+        <span class="nav-badge" id="sites-badge">0</span>
+      </button>
+      <button class="nav-btn" onclick="showPage('stats')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        Stats
+      </button>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+        <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+
+<!-- ── Secondary Nav ── -->
+<div id="secondary-nav">
+  <div class="secondary-nav-inner">
+    <button class="sec-nav-btn" onclick="showPage('trending')">Trending</button>
+    <button class="sec-nav-btn" onclick="showPage('domains')">Domains</button>
+    <button class="sec-nav-btn" onclick="showPage('random')">Random</button>
+    <button class="sec-nav-btn" onclick="showPage('bookmarks')">Bookmarks</button>
+  </div>
+</div>
+
+<!-- ── Home / Search Page ── -->
+<div id="page-home" class="page active">
+  <div id="page-home-inner" style="padding: 80px 24px 40px;">
+    <div class="home-hero" id="home-hero">
+      <h1>Scrape<span>It</span> Search</h1>
+      <p>A self-built search engine. Add sites to start crawling.</p>
+    </div>
+    <div class="search-box" id="main-search-box">
+      <div class="search-input-wrap">
+        <input type="text" id="main-search-input" placeholder="Search indexed sites..." autocomplete="off">
+        <button class="btn btn-primary" onclick="doSearch()">Search</button>
+        <button class="filter-toggle-btn" onclick="toggleFilterPanel()" title="Search filters">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          <span class="filter-badge" id="filter-badge" style="display:none">0</span>
+        </button>
+      </div>
+
+      <!-- Filter Panel -->
+      <div class="filter-panel" id="filter-panel">
+        <div class="filter-grid">
+          <div class="filter-field">
+            <label class="filter-label">Domain</label>
+            <input type="text" id="filter-domain" class="filter-input" placeholder="e.g. reddit.com">
+          </div>
+          <div class="filter-field">
+            <label class="filter-label">Language</label>
+            <input type="text" id="filter-lang" class="filter-input" placeholder="e.g. en, sk, de…"
+              list="lang-datalist" autocomplete="off">
+            <datalist id="lang-datalist">
+              <option value="af"><option value="ar"><option value="az">
+              <option value="bg"><option value="bn"><option value="bs">
+              <option value="ca"><option value="cs"><option value="cy">
+              <option value="da"><option value="de"><option value="el">
+              <option value="en"><option value="eo"><option value="es">
+              <option value="et"><option value="eu"><option value="fa">
+              <option value="fi"><option value="fr"><option value="ga">
+              <option value="gl"><option value="gu"><option value="he">
+              <option value="hi"><option value="hr"><option value="hu">
+              <option value="hy"><option value="id"><option value="is">
+              <option value="it"><option value="ja"><option value="ka">
+              <option value="kk"><option value="km"><option value="kn">
+              <option value="ko"><option value="lt"><option value="lv">
+              <option value="mk"><option value="ml"><option value="mn">
+              <option value="mr"><option value="ms"><option value="mt">
+              <option value="my"><option value="nb"><option value="ne">
+              <option value="nl"><option value="no"><option value="pa">
+              <option value="pl"><option value="pt"><option value="ro">
+              <option value="ru"><option value="si"><option value="sk">
+              <option value="sl"><option value="sq"><option value="sr">
+              <option value="sv"><option value="sw"><option value="ta">
+              <option value="te"><option value="th"><option value="tl">
+              <option value="tr"><option value="uk"><option value="ur">
+              <option value="uz"><option value="vi"><option value="zh">
+              <option value="zh-Hans"><option value="zh-Hant">
+            </datalist>
+          </div>
+          <div class="filter-field">
+            <label class="filter-label">Indexed after</label>
+            <input type="date" id="filter-date" class="filter-input">
+          </div>
+          <div class="filter-field filter-field-check">
+            <label class="filter-check-label">
+              <input type="checkbox" id="filter-has-image"> Has OG image
+            </label>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary btn-sm" onclick="applyFilters()">Apply</button>
+          <button class="btn btn-sm" onclick="clearFilters()">Clear</button>
+        </div>
+      </div>
+      <div class="search-tabs">
+        <button class="search-tab active" id="tab-web" onclick="switchTab('web')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Web
+        </button>
+        <button class="search-tab" id="tab-images" onclick="switchTab('images')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+          Images
+        </button>
+      </div>
+    </div>
+
+    <div id="results-section" class="results-section hidden" style="max-width: 720px; margin: 28px auto 0;">
+      <div class="results-header">
+        <span class="results-count" id="results-count"></span>
+      </div>
+      <div id="results-list"></div>
+      <div id="pagination" class="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add Site Page ── -->
+<div id="page-add" class="page">
+  <div style="max-width: 640px; margin: 0 auto; padding: 40px 24px;">
+    <h2>Add a Website</h2>
+    <p class="page-desc">Enter a URL to seed the crawler. ScrapeIt will scrape its metadata, images, and discover linked pages automatically.</p>
+
+    <div class="form-group">
+      <label for="add-url">Website URL</label>
+      <input type="url" id="add-url" placeholder="https://example.com" autocomplete="off">
+      <p class="form-hint">Protocol (https://) will be added automatically if missing.</p>
+    </div>
+    <button class="btn btn-primary" onclick="addSite()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add & Start Crawling
+    </button>
+
+    <div class="alert" id="add-alert"></div>
+
+    <div style="margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--border);">
+      <p class="text-sm" style="color: var(--text-muted);">
+        <strong>How crawling works:</strong><br>
+        ScrapeIt fetches the page HTML, extracts title, description, keywords, Open Graph tags, favicon, all images (with alt text), and all links. It then queues discovered links for crawling. Duplicate pages (same URL after normalization) are skipped. The crawler runs continuously in the background.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Stats Page ── -->
+<div id="page-stats" class="page">
+  <div class="container">
+    <h2>Search Engine Stats</h2>
+
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="stat-value" id="stat-sites">—</div><div class="stat-label">Indexed Sites</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-images">—</div><div class="stat-label">Indexed Images</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-domains">—</div><div class="stat-label">Unique Domains</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-links">—</div><div class="stat-label">Links Found</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-queue">—</div><div class="stat-label">Queue Size</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-failed">—</div><div class="stat-label">Failed Sites</div></div>
+    </div>
+
+    <div class="crawler-status" id="crawler-status">
+      <div class="status-dot" id="crawler-dot"></div>
+      <div class="crawler-info">
+        <strong id="crawler-status-text">Loading...</strong>
+        <div class="crawler-url" id="crawler-current-url"></div>
+      </div>
+      <button class="btn btn-sm btn-secondary" id="crawler-toggle-btn" onclick="toggleCrawler()">—</button>
+    </div>
+
+    <div class="section-title">Recently Crawled</div>
+    <div class="recent-list" id="recent-list">
+      <div class="empty-state"><p>No sites crawled yet</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Sites Page ── -->
+<div id="page-sites" class="page">
+  <div class="container">
+    <h2>All Sites</h2>
+    <div class="sites-filters">
+      <button class="filter-btn active" onclick="loadSites(null, this)">All</button>
+      <button class="filter-btn" onclick="loadSites('done', this)">Indexed</button>
+      <button class="filter-btn" onclick="loadSites('pending', this)">Pending</button>
+      <button class="filter-btn" onclick="loadSites('error', this)">Failed</button>
+    </div>
+    <div class="sites-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Domain</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Images</th>
+            <th>Links</th>
+            <th>Last Crawled</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="sites-tbody">
+          <tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="sites-pagination" class="pagination" style="margin-top: 20px;"></div>
+  </div>
+</div>
+
+
+<!-- ── Trending Page ── -->
+<div id="page-trending" class="page">
+  <div class="container">
+    <h2 style="padding-top:36px;font-size:1.5rem;font-weight:600;letter-spacing:-0.02em;margin-bottom:24px">Trending</h2>
+    <div class="trending-grid">
+      <div class="trending-section">
+        <div class="section-title">Top Domains</div>
+        <div id="trending-top"><div class="empty-state"><div class="spinner"></div></div></div>
+      </div>
+      <div class="trending-section">
+        <div class="section-title">Recently Indexed</div>
+        <div id="trending-recent"><div class="empty-state"><div class="spinner"></div></div></div>
+      </div>
+      <div class="trending-section">
+        <div class="section-title">New Domains</div>
+        <div id="trending-new"><div class="empty-state"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Domains Page ── -->
+<div id="page-domains" class="page">
+  <div class="container">
+    <div id="domain-browse-panel">
+      <div class="page-toolbar">
+        <h2>Browse Domains</h2>
+        <div class="toolbar-controls">
+          <input type="text" id="domain-search-input" class="toolbar-input" placeholder="Search domains…" oninput="domainQuery=this.value;domainPage=1;loadDomains()">
+          <select id="domain-sort-select" class="toolbar-select" onchange="domainSort=this.value;domainPage=1;loadDomains()">
+            <option value="pages">Most pages</option>
+            <option value="recent">Recently seen</option>
+            <option value="name">A–Z</option>
+          </select>
+        </div>
+      </div>
+      <p class="page-sub" id="domain-count-label"></p>
+      <div class="domain-grid" id="domain-grid"></div>
+      <div class="pagination" id="domain-pagination"></div>
+    </div>
+    <div id="domain-detail-panel" style="display:none">
+      <div class="page-toolbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn btn-sm btn-secondary" onclick="closeDomainDetail()">← Back</button>
+          <h2 id="domain-detail-name"></h2>
+        </div>
+      </div>
+      <p class="page-sub" id="domain-detail-count"></p>
+      <div id="domain-detail-list"></div>
+      <div class="pagination" id="domain-detail-pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Random Page ── -->
+<div id="page-random" class="page">
+  <div class="container" style="max-width:640px">
+    <div style="display:flex;align-items:center;gap:16px;padding-top:36px;margin-bottom:28px">
+      <h2 style="font-size:1.5rem;font-weight:600;letter-spacing:-0.02em">Random Page</h2>
+      <button class="btn btn-primary" id="random-btn" onclick="loadRandom()">↻ Another one</button>
+    </div>
+    <div id="random-card"><div class="empty-state"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
+<!-- ── Bookmarks + History Page ── -->
+<div id="page-bookmarks" class="page">
+  <div class="container">
+    <div class="bookmarks-grid">
+      <div>
+        <div class="page-toolbar" style="margin-bottom:16px">
+          <h2>Bookmarks</h2>
+          <button class="btn btn-sm btn-secondary" onclick="clearBookmarks()">Clear all</button>
+        </div>
+        <div id="bookmarks-list"><p class="empty-msg">No bookmarks yet. Click ☆ Save on any search result.</p></div>
+      </div>
+      <div>
+        <div class="page-toolbar" style="margin-bottom:16px">
+          <h2>Search History</h2>
+          <button class="btn btn-sm btn-secondary" onclick="clearHistory()">Clear all</button>
+        </div>
+        <div id="history-list"><p class="empty-msg">No history yet.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Similar Pages Modal ── -->
+<div class="modal-overlay" id="similar-modal" onclick="if(event.target===this)closeSimilar()">
+  <div class="modal">
+    <div class="modal-header">
+      <span>Similar to: <em id="similar-title"></em></span>
+      <button class="modal-close" onclick="closeSimilar()">✕</button>
+    </div>
+    <div class="modal-body" id="similar-body"></div>
+  </div>
+</div>
+
+<!-- ── Image Lightbox ── -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+  <img id="lightbox-img" src="" alt="">
+  <div class="lightbox-info" id="lightbox-info"></div>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

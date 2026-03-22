@@ -1,0 +1,20 @@
+# Dependencies
+backend/node_modules/
+
+# Database — your crawled data, never commit this
+backend/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Secrets
+backend/.env
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
