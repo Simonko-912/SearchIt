@@ -906,3 +906,37 @@ tbody td.text-mono {
 }
 .sec-nav-btn:hover { color: var(--text); }
 .sec-nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── TOS page ── */
+.tos-section { margin-bottom: 28px; }
+.tos-section h3 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+.tos-section p  { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 8px; }
+.tos-section ul { padding-left: 20px; }
+.tos-section ul li { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 4px; }
+
+/* ── Footer ── */
+#site-footer {
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+  margin-top: 60px;
+}
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.footer-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-family: var(--font);
+  cursor: pointer;
+  padding: 0;
+}
+.footer-link:hover { text-decoration: underline; }
