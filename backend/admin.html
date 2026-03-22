@@ -338,6 +338,10 @@ body {
       System Usage
     </div>
 
+    <div class="nav-item" onclick="showPanel('analytics')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 16 4-4 4 4 4-4"/></svg>
+      Analytics
+    </div>
     <div class="nav-section-label">Crawler</div>
     <div class="nav-item" onclick="showPanel('sites')">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -473,13 +477,12 @@ body {
               <option value="crawling">Crawling</option>
               <option value="error">Error</option>
             </select>
-            <button class="btn btn-sm btn-warn" onclick="recrawlSelected()">↻ Recrawl Selected</button>
             <button class="btn btn-sm btn-danger" onclick="deleteFiltered()">Delete Filtered</button>
           </div>
         </div>
         <div style="padding:0">
           <table class="data-table">
-            <thead><tr><th><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)"></th><th>URL</th><th>Status</th><th>Depth</th><th>Crawled</th><th>Priority</th><th>Actions</th></tr></thead>
+            <thead><tr><th><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)"></th><th>URL</th><th>Status</th><th>Depth</th><th>Crawled</th><th>Actions</th></tr></thead>
             <tbody id="sites-tbody"></tbody>
           </table>
         </div>
@@ -618,6 +621,27 @@ body {
     </div>
 
     <!-- ── DANGER ZONE ── -->
+    <div class="panel" id="panel-analytics">
+      <div class="section-gap">
+        <div class="row-3">
+          <div class="card"><div class="card-label">Searches (all time)</div><div class="card-value" id="an-searches">—</div></div>
+          <div class="card"><div class="card-label">Page Views (all time)</div><div class="card-value" id="an-pageviews">—</div></div>
+          <div class="card"><div class="card-label">Total Events</div><div class="card-value" id="an-total">—</div></div>
+          <div class="card"><div class="card-label">Events Today</div><div class="card-value" id="an-today">—</div></div>
+          <div class="card"><div class="card-label">Events This Week</div><div class="card-value" id="an-week">—</div></div>
+          <div class="card"><div class="card-label">Unique Visitors (7d)</div><div class="card-value" id="an-unique">—</div></div>
+        </div>
+      </div>
+      <div class="section-gap">
+        <div class="section-label">Top Search Queries</div>
+        <div id="an-top-queries"><div class="loading-row"><div class="spinner"></div></div></div>
+      </div>
+      <div class="section-gap">
+        <div class="section-label">Daily Activity (last 30 days)</div>
+        <div id="an-daily"><div class="loading-row"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
     <div class="panel" id="panel-danger">
       <div class="card" style="border-color:#450a0a">
         <div class="card-header" style="border-color:#450a0a;color:var(--red)">
@@ -681,6 +705,7 @@ const PANEL_TITLES = {
   queue: 'Crawl Queue',
   debug: 'Debug Commands',
   danger: 'Danger Zone',
+  analytics: 'Analytics',
 };
 
 function showPanel(name) {
@@ -695,6 +720,7 @@ function showPanel(name) {
   document.getElementById('panel-title').textContent = PANEL_TITLES[name] || name;
   document.getElementById('panel-sub').textContent = '';
   if (name === 'dashboard') loadDashboard();
+  if (name === 'analytics')  loadAnalytics();
   if (name === 'system')    loadSystem();
   if (name === 'sites')     loadSitesAdmin(1);
   if (name === 'schedule')  loadSchedule();
@@ -868,27 +894,17 @@ async function loadSitesAdmin(page) {
 
   const tbody = document.getElementById('sites-tbody');
   tbody.innerHTML = sites.map(s => `
-    <tr id="site-row-${s.id}">
+    <tr>
       <td><input type="checkbox" class="site-check" data-id="${s.id}"></td>
       <td class="url-cell"><a href="${esc(s.url)}" target="_blank">${esc(s.url)}</a></td>
       <td>${statusBadge(s.status)}</td>
       <td class="mono">${s.crawl_depth}</td>
       <td class="mono">${timeAgo(s.scraped_at)}</td>
       <td>
-        <div style="display:flex;align-items:center;gap:4px">
-          <input type="number" class="form-input priority-input" value="${s.queue_priority || ''}"
-            placeholder="—" min="1" max="99999" step="100"
-            style="width:70px;padding:3px 6px;font-size:0.75rem;font-family:var(--mono)"
-            title="Set crawl priority (higher = sooner). Seed default = 10000."
-            onchange="setPriority(${s.id}, this.value)">
-        </div>
+        <button class="btn btn-sm btn-green" onclick="recrawlSite(${s.id}, this)">↻</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSite(${s.id}, this)">✕</button>
       </td>
-      <td>
-        <button class="btn btn-sm btn-green" onclick="recrawlSite(${s.id}, this)" title="Re-crawl at current priority">↻ Recrawl</button>
-        <button class="btn btn-sm btn-warn" onclick="recrawlSiteNow(${s.id}, this)" title="Force to front of queue (max priority)">⚡ Now</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteSite(${s.id}, this)" title="Delete">✕</button>
-      </td>
-    </tr>`).join('') || '<tr><td colspan="7" class="empty">No sites found.</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="6" class="empty">No sites found.</td></tr>';
 
   // Pagination
   const pages = Math.ceil(d.total / 25);
@@ -915,43 +931,8 @@ async function deleteSite(id, btn) {
 }
 async function recrawlSite(id, btn) {
   btn.disabled = true;
-  // Use whatever priority is in the input, or default seed priority
-  const row = document.getElementById('site-row-' + id);
-  const inp = row ? row.querySelector('.priority-input') : null;
-  const priority = inp && inp.value ? parseInt(inp.value) : 10000;
-  await api('/sites/' + id + '/recrawl', 'POST', { priority });
+  await api('/sites/' + id + '/recrawl', 'POST');
   btn.disabled = false;
-  loadSitesAdmin();
-}
-
-async function recrawlSiteNow(id, btn) {
-  btn.disabled = true;
-  // Enqueue at maximum priority — jumps to absolute front of queue
-  await api('/sites/' + id + '/recrawl', 'POST', { priority: 99999 });
-  btn.disabled = false;
-  loadSitesAdmin();
-  logDebug('Site ' + id + ' pushed to front of queue (priority 99999)', 'ok');
-}
-
-async function setPriority(id, value) {
-  const priority = parseInt(value);
-  if (!priority || priority < 1) return;
-  const d = await api('/sites/' + id + '/priority', 'POST', { priority });
-  if (d.success) {
-    logDebug('Priority set to ' + priority + ' for site ' + id, 'ok');
-  }
-}
-
-// Bulk recrawl selected at chosen priority
-async function recrawlSelected() {
-  const checked = [...document.querySelectorAll('.site-check:checked')].map(c => c.dataset.id);
-  if (checked.length === 0) { alert('Select sites first.'); return; }
-  const priority = parseInt(prompt('Enter priority (default 10000, max 99999):', '10000'));
-  if (!priority) return;
-  for (const id of checked) {
-    await api('/sites/' + id + '/recrawl', 'POST', { priority });
-  }
-  logDebug('Re-queued ' + checked.length + ' sites at priority ' + priority, 'ok');
   loadSitesAdmin();
 }
 function toggleSelectAll(cb) {
@@ -1100,6 +1081,55 @@ async function dangerAction(action) {
   alert(d.message || JSON.stringify(d));
   loadDashboard();
 }
+
+// ── Analytics ────────────────────────────────────────────────────────────
+async function loadAnalytics() {
+  try {
+    const data = await api('/analytics');
+    document.getElementById('an-searches').textContent  = fmtNum(data.totalSearches);
+    document.getElementById('an-pageviews').textContent = fmtNum(data.totalPageviews);
+    document.getElementById('an-total').textContent     = fmtNum(data.total);
+    document.getElementById('an-today').textContent     = fmtNum(data.today);
+    document.getElementById('an-week').textContent      = fmtNum(data.week);
+    document.getElementById('an-unique').textContent    = fmtNum(data.uniqueVisitors);
+
+    // Top queries table
+    const tq = document.getElementById('an-top-queries');
+    if (data.topQueries && data.topQueries.length) {
+      tq.innerHTML = '<table><thead><tr><th>Query</th><th>Count</th><th>Last Seen</th></tr></thead><tbody>'
+        + data.topQueries.map(q =>
+            '<tr><td>' + escH(q.query) + '</td><td>' + fmtNum(q.count) + '</td><td style="font-size:0.75rem;color:var(--text3)">' + (q.last_seen ? new Date(q.last_seen).toLocaleDateString() : '—') + '</td></tr>'
+          ).join('') + '</tbody></table>';
+    } else {
+      tq.innerHTML = '<p style="color:var(--text3);padding:12px 0">No searches yet.</p>';
+    }
+
+    // Daily activity table
+    const da = document.getElementById('an-daily');
+    if (data.daily && data.daily.length) {
+      // Group by day
+      const byDay = {};
+      data.daily.forEach(r => {
+        if (!byDay[r.day]) byDay[r.day] = {};
+        byDay[r.day][r.type] = r.count;
+      });
+      const days = Object.keys(byDay).sort().reverse().slice(0, 30);
+      da.innerHTML = '<table><thead><tr><th>Date</th><th>Searches</th><th>Image Searches</th><th>Page Views</th></tr></thead><tbody>'
+        + days.map(d =>
+            '<tr><td style="font-family:var(--font-mono);font-size:0.8rem">' + d + '</td>'
+            + '<td>' + (byDay[d].search || 0) + '</td>'
+            + '<td>' + (byDay[d].image_search || 0) + '</td>'
+            + '<td>' + (byDay[d].pageview || 0) + '</td></tr>'
+          ).join('') + '</tbody></table>';
+    } else {
+      da.innerHTML = '<p style="color:var(--text3);padding:12px 0">No activity yet.</p>';
+    }
+  } catch(e) {
+    document.getElementById('an-top-queries').innerHTML = '<p style="color:var(--text3)">Error: ' + e.message + '</p>';
+  }
+}
+
+function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ── Init ──────────────────────────────────────────────────────────────────
 updateCrawlerBar();

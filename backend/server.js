@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { initDb } = require('./db');
+const { initAnalytics, track, getAnalytics } = require('./analytics');
 const { Crawler } = require('./crawler');
 const { normalizeUrl, getDomain } = require('./scraper');
 
@@ -10,6 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 const db = initDb();
+const _analytics = initAnalytics();
 const crawler = new Crawler(db);
 
 // ── Startup migration: deduplicate www. and fix domains ──────────────────
@@ -70,6 +72,23 @@ setTimeout(async () => {
 
 app.use(cors());
 app.use(express.json());
+
+// ── Usage tracking middleware ─────────────────────────────────────────────
+app.use((req, res, next) => {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || '';
+  // Track page loads (HTML requests from browsers)
+  if (req.method === 'GET' && !req.path.startsWith('/api/') && !req.path.startsWith('/admin')) {
+    track('pageview', req.path, ip);
+  }
+  // Track searches
+  if (req.method === 'GET' && req.path === '/api/search' && req.query.q) {
+    track('search', req.query.q, ip);
+  }
+  if (req.method === 'GET' && req.path === '/api/search/images' && req.query.q) {
+    track('image_search', req.query.q, ip);
+  }
+  next();
+});
 
 // Auto-detect frontend location
 const possibleFrontendPaths = [
@@ -270,48 +289,13 @@ app.get('/api/search', async (req, res) => {
       // ── CRAWL DEPTH (minor tiebreaker only) ──────────────────────────────
       score += Math.max(0, (5 - (row.crawl_depth || 0))) * 100;
 
-      // ── URL LENGTH BONUS ──────────────────────────────────────────────────
-      // Shorter URLs are generally more authoritative (homepage, top-level page).
-      // Give a bonus that tapers off: /about gets more than /blog/2019/01/long-slug
-      const urlLen = row.url.length;
-      if      (urlLen < 25)  score += 3000;
-      else if (urlLen < 40)  score += 2000;
-      else if (urlLen < 60)  score += 1000;
-      else if (urlLen < 80)  score +=  400;
-      else if (urlLen < 120) score +=  100;
-      // Long URLs (tracking params, deep pagination) get a small penalty
-      else score -= Math.min(2000, Math.floor((urlLen - 120) / 10) * 100);
-
       return { ...row, score };
     });
 
     // Primary sort: score desc. Tiebreak: shallower crawl depth first.
     scored.sort((a, b) => b.score - a.score || (a.crawl_depth || 0) - (b.crawl_depth || 0));
-
-    // ── TITLE DEDUPLICATION ───────────────────────────────────────────────
-    // If multiple results share the same (or very similar) title, keep only
-    // the highest-scoring one near the top — push duplicates down by halving
-    // their score so they only appear if there's nothing else to show.
-    const seenTitles = new Map(); // normalizedTitle -> best score so far
-    const deduped = scored.map(row => {
-      // Normalize: lowercase, strip punctuation/whitespace, first 60 chars
-      const normTitle = (row.title || row.url)
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, ' ')
-        .trim()
-        .slice(0, 60);
-
-      if (!seenTitles.has(normTitle)) {
-        seenTitles.set(normTitle, row.score);
-        return row; // first occurrence — keep full score
-      }
-      // Duplicate title — penalise heavily so it sinks below unique results
-      return { ...row, score: row.score - 200000 };
-    });
-    deduped.sort((a, b) => b.score - a.score || (a.crawl_depth || 0) - (b.crawl_depth || 0));
-
-    const total = deduped.length;
-    res.json({ results: deduped.slice(offset, offset + limit), total, page, limit, pages: Math.ceil(total / limit), query: q });
+    const total = scored.length;
+    res.json({ results: scored.slice(offset, offset + limit), total, page, limit, pages: Math.ceil(total / limit), query: q });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -721,6 +705,22 @@ app.post('/admin-api/:token/danger/:action', async (req, res) => {
 
     res.status(400).json({ error: 'Unknown action' });
   } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── GET /admin-api/:token/analytics ──────────────────────────────────────
+app.get('/admin-api/:token/analytics', async (req, res) => {
+  const { ADMIN_TOKEN } = require('./admin-config');
+  if (req.params.token !== ADMIN_TOKEN) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const data = await getAnalytics();
+    res.json(data);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/tos', (req, res) => {
+  const tosPath = path.join(__dirname, '..', 'frontend', 'public', 'tos.html');
+  if (fs.existsSync(tosPath)) return res.sendFile(tosPath);
+  res.status(404).send('tos.html not found');
 });
 
 app.get('*', (req, res) => {
