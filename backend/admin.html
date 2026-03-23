@@ -239,15 +239,6 @@ body {
 .btn-warn:hover  { background: #422006; color: #fde68a; }
 .btn-green { color: var(--green); border-color: #14532d; }
 .btn-green:hover { background: #14532d; color: #86efac; }
-.btn-yellow { color: #fbbf24; border-color: #78350f; }
-.btn-yellow:hover { background: #78350f; color: #fde68a; }
-.priority-input {
-  width: 72px; height: 28px; padding: 0 6px;
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: 6px; color: var(--text); font-family: var(--font-mono);
-  font-size: 0.78rem; text-align: center;
-}
-.priority-input:focus { outline: none; border-color: var(--accent); }
 .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -910,13 +901,8 @@ async function loadSitesAdmin(page) {
       <td class="mono">${s.crawl_depth}</td>
       <td class="mono">${timeAgo(s.scraped_at)}</td>
       <td>
-        <input type="number" class="priority-input" value="${s.crawl_priority || 100}" min="1" max="999999"
-          onchange="setPriority(${s.id}, this.value)" title="Crawl priority">
-      </td>
-      <td>
-        <button class="btn btn-sm btn-green" onclick="recrawlSite(${s.id}, this)" title="Re-crawl">↻</button>
-        <button class="btn btn-sm btn-yellow" onclick="instaQueue(${s.id}, this)" title="Queue now at max priority">⚡</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteSite(${s.id}, this)" title="Delete">✕</button>
+        <button class="btn btn-sm btn-green" onclick="recrawlSite(${s.id}, this)">↻</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSite(${s.id}, this)">✕</button>
       </td>
     </tr>`).join('') || '<tr><td colspan="6" class="empty">No sites found.</td></tr>';
 
@@ -945,22 +931,9 @@ async function deleteSite(id, btn) {
 }
 async function recrawlSite(id, btn) {
   btn.disabled = true;
-  const row = btn.closest('tr');
-  const priorityInput = row ? row.querySelector('.priority-input') : null;
-  const priority = priorityInput ? parseInt(priorityInput.value) || 100 : 100;
-  await api('/sites/' + id + '/recrawl', 'POST', { priority });
+  await api('/sites/' + id + '/recrawl', 'POST');
   btn.disabled = false;
   loadSitesAdmin();
-}
-async function instaQueue(id, btn) {
-  btn.disabled = true;
-  await api('/sites/' + id + '/recrawl', 'POST', { priority: 99999 });
-  btn.textContent = '✓';
-  setTimeout(() => { btn.disabled = false; btn.textContent = '⚡'; }, 1500);
-}
-async function setPriority(id, value) {
-  const priority = parseInt(value) || 100;
-  await api('/sites/' + id + '/priority', 'POST', { priority });
 }
 function toggleSelectAll(cb) {
   document.querySelectorAll('.site-check').forEach(c => c.checked = cb.checked);
@@ -1113,28 +1086,26 @@ async function dangerAction(action) {
 async function loadAnalytics() {
   try {
     const data = await api('/analytics');
-    document.getElementById('an-searches').textContent  = fmtNum(data.totalSearches);
-    document.getElementById('an-pageviews').textContent = fmtNum(data.totalPageviews);
-    document.getElementById('an-total').textContent     = fmtNum(data.total);
-    document.getElementById('an-today').textContent     = fmtNum(data.today);
-    document.getElementById('an-week').textContent      = fmtNum(data.week);
-    document.getElementById('an-unique').textContent    = fmtNum(data.uniqueVisitors);
+    document.getElementById('an-searches').textContent  = fmt(data.totalSearches);
+    document.getElementById('an-pageviews').textContent = fmt(data.totalPageviews);
+    document.getElementById('an-total').textContent     = fmt(data.total);
+    document.getElementById('an-today').textContent     = fmt(data.today);
+    document.getElementById('an-week').textContent      = fmt(data.week);
+    document.getElementById('an-unique').textContent    = fmt(data.uniqueVisitors);
 
-    // Top queries table
     const tq = document.getElementById('an-top-queries');
     if (data.topQueries && data.topQueries.length) {
       tq.innerHTML = '<table><thead><tr><th>Query</th><th>Count</th><th>Last Seen</th></tr></thead><tbody>'
         + data.topQueries.map(q =>
-            '<tr><td>' + escH(q.query) + '</td><td>' + fmtNum(q.count) + '</td><td style="font-size:0.75rem;color:var(--text3)">' + (q.last_seen ? new Date(q.last_seen).toLocaleDateString() : '—') + '</td></tr>'
+            '<tr><td>' + escH(q.query) + '</td><td>' + fmt(q.count) + '</td><td style="font-size:0.75rem;color:var(--text3)">'
+            + (q.last_seen ? new Date(q.last_seen).toLocaleDateString() : '—') + '</td></tr>'
           ).join('') + '</tbody></table>';
     } else {
       tq.innerHTML = '<p style="color:var(--text3);padding:12px 0">No searches yet.</p>';
     }
 
-    // Daily activity table
     const da = document.getElementById('an-daily');
     if (data.daily && data.daily.length) {
-      // Group by day
       const byDay = {};
       data.daily.forEach(r => {
         if (!byDay[r.day]) byDay[r.day] = {};
@@ -1152,7 +1123,7 @@ async function loadAnalytics() {
       da.innerHTML = '<p style="color:var(--text3);padding:12px 0">No activity yet.</p>';
     }
   } catch(e) {
-    document.getElementById('an-top-queries').innerHTML = '<p style="color:var(--text3)">Error: ' + e.message + '</p>';
+    document.getElementById('an-top-queries').innerHTML = '<p style="color:var(--text3)">Error: ' + escH(e.message) + '</p>';
   }
 }
 
