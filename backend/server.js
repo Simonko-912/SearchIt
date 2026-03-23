@@ -545,7 +545,7 @@ app.get('/admin-api/:token/sites', async (req, res) => {
     const wc = where.length ? 'WHERE ' + where.join(' AND ') : '';
     const total = (await db.getAsync('SELECT COUNT(*) as c FROM sites ' + wc, params)).c;
     const sites = await db.allAsync(
-      'SELECT id,url,domain,title,status,crawl_depth,scraped_at FROM sites ' + wc + ' ORDER BY added_at DESC LIMIT ? OFFSET ?',
+      'SELECT id,url,domain,title,status,crawl_depth,scraped_at,crawl_priority FROM sites ' + wc + ' ORDER BY added_at DESC LIMIT ? OFFSET ?',
       [...params, limit, offset]
     );
     res.json({ sites, total, page, pages: Math.ceil(total/limit) });
@@ -565,8 +565,19 @@ app.post('/admin-api/:token/sites/:id/recrawl', async (req, res) => {
   try {
     const site = await db.getAsync('SELECT url FROM sites WHERE id=?', [req.params.id]);
     if (!site) return res.status(404).json({ error: 'Not found' });
-    await db.runAsync("UPDATE sites SET status='pending' WHERE id=?", [req.params.id]);
-    crawler.enqueue(site.url, 0);
+    const priority = parseInt(req.body?.priority) || 100;
+    await db.runAsync("UPDATE sites SET status='pending', crawl_priority=? WHERE id=?", [priority, req.params.id]);
+    crawler.enqueue(site.url, 0, priority);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Admin: Set site priority ───────────────────────────────────────────────
+app.post('/admin-api/:token/sites/:id/priority', async (req, res) => {
+  try {
+    const priority = parseInt(req.body?.priority) || 100;
+    await db.runAsync('UPDATE sites SET crawl_priority=? WHERE id=?', [priority, req.params.id]);
+    await db.runAsync('UPDATE crawl_queue SET priority=? WHERE url=(SELECT url FROM sites WHERE id=?)', [priority, req.params.id]);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

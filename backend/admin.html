@@ -239,6 +239,15 @@ body {
 .btn-warn:hover  { background: #422006; color: #fde68a; }
 .btn-green { color: var(--green); border-color: #14532d; }
 .btn-green:hover { background: #14532d; color: #86efac; }
+.btn-yellow { color: #fbbf24; border-color: #78350f; }
+.btn-yellow:hover { background: #78350f; color: #fde68a; }
+.priority-input {
+  width: 72px; height: 28px; padding: 0 6px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); font-family: var(--font-mono);
+  font-size: 0.78rem; text-align: center;
+}
+.priority-input:focus { outline: none; border-color: var(--accent); }
 .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -901,8 +910,13 @@ async function loadSitesAdmin(page) {
       <td class="mono">${s.crawl_depth}</td>
       <td class="mono">${timeAgo(s.scraped_at)}</td>
       <td>
-        <button class="btn btn-sm btn-green" onclick="recrawlSite(${s.id}, this)">↻</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteSite(${s.id}, this)">✕</button>
+        <input type="number" class="priority-input" value="${s.crawl_priority || 100}" min="1" max="999999"
+          onchange="setPriority(${s.id}, this.value)" title="Crawl priority">
+      </td>
+      <td>
+        <button class="btn btn-sm btn-green" onclick="recrawlSite(${s.id}, this)" title="Re-crawl">↻</button>
+        <button class="btn btn-sm btn-yellow" onclick="instaQueue(${s.id}, this)" title="Queue now at max priority">⚡</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSite(${s.id}, this)" title="Delete">✕</button>
       </td>
     </tr>`).join('') || '<tr><td colspan="6" class="empty">No sites found.</td></tr>';
 
@@ -931,9 +945,22 @@ async function deleteSite(id, btn) {
 }
 async function recrawlSite(id, btn) {
   btn.disabled = true;
-  await api('/sites/' + id + '/recrawl', 'POST');
+  const row = btn.closest('tr');
+  const priorityInput = row ? row.querySelector('.priority-input') : null;
+  const priority = priorityInput ? parseInt(priorityInput.value) || 100 : 100;
+  await api('/sites/' + id + '/recrawl', 'POST', { priority });
   btn.disabled = false;
   loadSitesAdmin();
+}
+async function instaQueue(id, btn) {
+  btn.disabled = true;
+  await api('/sites/' + id + '/recrawl', 'POST', { priority: 99999 });
+  btn.textContent = '✓';
+  setTimeout(() => { btn.disabled = false; btn.textContent = '⚡'; }, 1500);
+}
+async function setPriority(id, value) {
+  const priority = parseInt(value) || 100;
+  await api('/sites/' + id + '/priority', 'POST', { priority });
 }
 function toggleSelectAll(cb) {
   document.querySelectorAll('.site-check').forEach(c => c.checked = cb.checked);
