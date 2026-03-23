@@ -1086,28 +1086,26 @@ async function dangerAction(action) {
 async function loadAnalytics() {
   try {
     const data = await api('/analytics');
-    document.getElementById('an-searches').textContent  = fmtNum(data.totalSearches);
-    document.getElementById('an-pageviews').textContent = fmtNum(data.totalPageviews);
-    document.getElementById('an-total').textContent     = fmtNum(data.total);
-    document.getElementById('an-today').textContent     = fmtNum(data.today);
-    document.getElementById('an-week').textContent      = fmtNum(data.week);
-    document.getElementById('an-unique').textContent    = fmtNum(data.uniqueVisitors);
+    document.getElementById('an-searches').textContent  = fmt(data.totalSearches);
+    document.getElementById('an-pageviews').textContent = fmt(data.totalPageviews);
+    document.getElementById('an-total').textContent     = fmt(data.total);
+    document.getElementById('an-today').textContent     = fmt(data.today);
+    document.getElementById('an-week').textContent      = fmt(data.week);
+    document.getElementById('an-unique').textContent    = fmt(data.uniqueVisitors);
 
-    // Top queries table
     const tq = document.getElementById('an-top-queries');
     if (data.topQueries && data.topQueries.length) {
       tq.innerHTML = '<table><thead><tr><th>Query</th><th>Count</th><th>Last Seen</th></tr></thead><tbody>'
         + data.topQueries.map(q =>
-            '<tr><td>' + escH(q.query) + '</td><td>' + fmtNum(q.count) + '</td><td style="font-size:0.75rem;color:var(--text3)">' + (q.last_seen ? new Date(q.last_seen).toLocaleDateString() : '—') + '</td></tr>'
+            '<tr><td>' + escH(q.query) + '</td><td>' + fmt(q.count) + '</td><td style="font-size:0.75rem;color:var(--text3)">'
+            + (q.last_seen ? new Date(q.last_seen).toLocaleDateString() : '—') + '</td></tr>'
           ).join('') + '</tbody></table>';
     } else {
       tq.innerHTML = '<p style="color:var(--text3);padding:12px 0">No searches yet.</p>';
     }
 
-    // Daily activity table
     const da = document.getElementById('an-daily');
     if (data.daily && data.daily.length) {
-      // Group by day
       const byDay = {};
       data.daily.forEach(r => {
         if (!byDay[r.day]) byDay[r.day] = {};
@@ -1125,7 +1123,7 @@ async function loadAnalytics() {
       da.innerHTML = '<p style="color:var(--text3);padding:12px 0">No activity yet.</p>';
     }
   } catch(e) {
-    document.getElementById('an-top-queries').innerHTML = '<p style="color:var(--text3)">Error: ' + e.message + '</p>';
+    document.getElementById('an-top-queries').innerHTML = '<p style="color:var(--text3)">Error: ' + escH(e.message) + '</p>';
   }
 }
 
