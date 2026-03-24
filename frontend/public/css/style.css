@@ -61,13 +61,10 @@ a:hover { color: var(--accent-hover); }
 
 /* ── Header ── */
 #header {
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: var(--shadow-sm);
+  height: auto;
+  padding: 0;
 }
+/* the free space between the logo is a pain in the to remove */
 
 .header-inner {
   height: auto;
