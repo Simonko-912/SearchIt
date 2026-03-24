@@ -91,7 +91,7 @@ a:hover { color: var(--accent-hover); }
   height: 160px;
   width: auto;
   display: block;
-  margin: 0;  /* trying random stuff atp */
+  margin: 0 auto; /* a */
 }
 
 .header-search {
