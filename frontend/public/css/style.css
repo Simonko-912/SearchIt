@@ -64,6 +64,7 @@ a:hover { color: var(--accent-hover); }
   height: auto;
   padding: 0;
 }
+
 /* the free space between the logo is a pain in the to remove */
 
 .header-inner {
@@ -184,7 +185,11 @@ a:hover { color: var(--accent-hover); }
   flex-direction: column;
   justify-content: space-between;
 }
-.page.active { display: block; }
+.page.active {
+  min-height: 945px;
+  display: flex;
+  flex-direction: column;
+}
 
 .container {
   max-width: 1100px;
@@ -925,7 +930,7 @@ tbody td.text-mono {
 #site-footer {
   border-top: 1px solid var(--border);
   background: var(--bg-card);
-  margin-top: 60px;
+  margin-top: auto;
 }
 .footer-inner {
   max-width: 1100px;
