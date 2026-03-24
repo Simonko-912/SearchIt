@@ -88,7 +88,13 @@ a:hover { color: var(--accent-hover); }
   flex-shrink: 0;
 }
 .logo span { color: var(--accent); }
+/* above prob useless but keeping for support*/
 
+.logo img {
+  height: 160px;   /* idk what to set to*/
+  width: auto;    /* keep aspect ratio */
+  display: block; /* prevents tiny inline spacing */
+}
 .header-search {
   flex: 1;
   max-width: 480px;
