@@ -94,6 +94,7 @@ a:hover { color: var(--accent-hover); }
   height: 160px;   /* idk what to set to*/
   width: auto;    /* keep aspect ratio */
   display: block; /* prevents tiny inline spacing */
+  align-items: center; /* aparently this helps with smth */
 }
 .header-search {
   flex: 1;
