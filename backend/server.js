@@ -168,11 +168,34 @@ app.get('/api/search', async (req, res) => {
 
     const qLower = q.toLowerCase().trim();
     const terms = qLower.split(/\s+/).filter(Boolean);
+    const isPhrase = terms.length > 1;
 
+    // ── Fuzzy/misspell expansion ──────────────────────────────────────────
+    // For each term, generate 1-character-deletion variants so "placstics"
+    // still matches "plastics", "mocrosoft" matches "microsoft" etc.
+    function deletionVariants(word) {
+      const vars = new Set([word]);
+      for (let i = 0; i < word.length; i++) {
+        vars.add(word.slice(0,i) + word.slice(i+1)); // delete char i
+      }
+      // Also try common transpositions (swap adjacent chars)
+      for (let i = 0; i < word.length - 1; i++) {
+        vars.add(word.slice(0,i) + word[i+1] + word[i] + word.slice(i+2));
+      }
+      return [...vars].filter(v => v.length >= 3);
+    }
+
+    // Build expanded terms: each original term + its fuzzy variants
+    const expandedTerms = terms.map(t => ({ original: t, variants: deletionVariants(t) }));
+
+    // For DB candidate fetch: use original terms only (fuzzy scoring happens in JS)
     const anyTermWhere = terms.map(() =>
       "(LOWER(title) LIKE ? OR LOWER(url) LIKE ? OR LOWER(description) LIKE ? OR LOWER(keywords) LIKE ? OR LOWER(domain) LIKE ?)"
     ).join(' OR ');
     const anyTermParams = terms.flatMap(t => ['%'+t+'%','%'+t+'%','%'+t+'%','%'+t+'%','%'+t+'%']);
+
+    // Also fetch candidates that match the full phrase (for phrase-first ranking)
+    const phraseParam = isPhrase ? '%'+qLower+'%' : null;
 
     // Build extra filter clauses from query params
     const filterParts = [];
@@ -195,10 +218,28 @@ app.get('/api/search', async (req, res) => {
     }
     const filterClause = filterParts.length ? ' AND ' + filterParts.join(' AND ') : '';
 
-    const candidates = await db.allAsync(
-      "SELECT id,url,domain,title,description,favicon,og_image,scraped_at,keywords,crawl_depth,lang FROM sites WHERE status='done' AND (" + anyTermWhere + ")" + filterClause + " LIMIT 5000",
-      [...anyTermParams, ...filterVals]
-    );
+    // Fetch term matches + phrase matches combined
+    let candidates;
+    if (isPhrase && phraseParam) {
+      // Get both phrase matches and term matches, phrase matches first
+      const phraseWhere = "(LOWER(title) LIKE ? OR LOWER(description) LIKE ? OR LOWER(url) LIKE ?)";
+      const phraseMatches = await db.allAsync(
+        "SELECT id,url,domain,title,description,favicon,og_image,scraped_at,keywords,crawl_depth,lang FROM sites WHERE status='done' AND " + phraseWhere + (filterClause||'') + " LIMIT 2000",
+        [phraseParam, phraseParam, phraseParam, ...filterVals]
+      );
+      const termMatches = await db.allAsync(
+        "SELECT id,url,domain,title,description,favicon,og_image,scraped_at,keywords,crawl_depth,lang FROM sites WHERE status='done' AND (" + anyTermWhere + ")" + (filterClause||'') + " LIMIT 3000",
+        [...anyTermParams, ...filterVals]
+      );
+      // Merge, deduplicate by id
+      const seen = new Set(phraseMatches.map(r => r.id));
+      candidates = [...phraseMatches, ...termMatches.filter(r => !seen.has(r.id))];
+    } else {
+      candidates = await db.allAsync(
+        "SELECT id,url,domain,title,description,favicon,og_image,scraped_at,keywords,crawl_depth,lang FROM sites WHERE status='done' AND (" + anyTermWhere + ")" + (filterClause||'') + " LIMIT 5000",
+        [...anyTermParams, ...filterVals]
+      );
+    }
 
     const scored = candidates.map(row => {
       const titleL    = (row.title       || '').toLowerCase();
@@ -260,18 +301,38 @@ app.get('/api/search', async (req, res) => {
         } else if (titleL.startsWith(qLower + ' ') || titleL.startsWith(qLower + ':') || titleL.startsWith(qLower + ',')) {
           score += 25000; // query starts the title
         } else {
-          // Partial matches: score per term, but with word-boundary preference
-          for (const term of terms) {
-            const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const wb  = new RegExp('(?:^|\\W)' + esc + '(?:\\W|$)');
-            if (wb.test(titleL))            score += 8000;
-            else if (titleL.includes(term)) score += 2000;
+          // ── PHRASE BONUS ────────────────────────────────────────────────
+          if (isPhrase) {
+            if (titleL.includes(qLower))  score += 35000;
+            if (descL.includes(qLower))   score +=  8000;
+            const slug = qLower.replace(/\s+/g, '-');
+            const slug2 = qLower.replace(/\s+/g, '_');
+            if (urlL.includes(slug) || urlL.includes(slug2)) score += 5000;
           }
-          if (terms.length > 1 && titleL.includes(qLower)) score += 6000;
+          // Per-term scoring with fuzzy fallback
+          for (const et of expandedTerms) {
+            const term = et.original;
+            const variants = et.variants;
+            const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const wb  = new RegExp('(?:^|\W)' + esc + '(?:\W|$)');
+            if (wb.test(titleL))             score += 8000;
+            else if (titleL.includes(term))  score += 2000;
+            else if (variants.some(v => titleL.includes(v))) score += 800;
+            else if (variants.some(v => descL.includes(v)))  score += 200;
+          }
+          // Penalise when only some terms match (e.g. "micro plastics" -> "microsoft")
+          if (isPhrase) {
+            const matched = expandedTerms.filter(function(et) {
+              return titleL.includes(et.original) || descL.includes(et.original) ||
+                     et.variants.some(function(v){ return titleL.includes(v); });
+            }).length;
+            if (matched < terms.length) score -= Math.round((1 - matched/terms.length) * 25000);
+          }
         }
 
         // Description / keywords (secondary content signals)
-        for (const term of terms) {
+        for (const et of expandedTerms) {
+          const term = et.original;
           if (descL.includes(term))     score += 1000;
           if (keywordsL.includes(term)) score +=  500;
         }
