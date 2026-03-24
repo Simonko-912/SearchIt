@@ -178,7 +178,12 @@ a:hover { color: var(--accent-hover); }
 .theme-toggle:hover { background: var(--bg-secondary); color: var(--text); }
 
 /* ── Pages ── */
-.page { display: none; }
+.page {
+  min-height: 945px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
 .page.active { display: block; }
 
 .container {
