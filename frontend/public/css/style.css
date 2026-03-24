@@ -84,11 +84,11 @@ a:hover { color: var(--accent-hover); }
 .logo span { color: var(--accent); }
 /* above prob useless but keeping for support*/
 
-.header-inner {
-  padding-top: 0;    /* remove extra top space (suposendly)*/
-  padding-bottom: 0; /* remove extra bottom space maybe*/
-  height: auto;      /* let it fit the content */
-  align-items: center;
+.logo img {
+  height: 160px;
+  width: auto;
+  display: block;
+  margin: 0;  /* trying random stuff atp */
 }
 
 .header-search {
