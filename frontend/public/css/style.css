@@ -54,8 +54,10 @@ body {
   min-height: 100vh;
   line-height: 1.6;
   transition: background var(--transition), color var(--transition);
-}
 
+  display: flex;
+  flex-direction: column; /* eeeee */
+}
 a { color: var(--accent); text-decoration: none; }
 a:hover { color: var(--accent-hover); }
 
@@ -180,11 +182,12 @@ a:hover { color: var(--accent-hover); }
 
 /* ── Pages ── */
 .page {
-  min-height: 945px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  min-height: 100vh; /* full viewport height */
+  flex: 1 /* mmmmmmm */
 }
+
 .page.active {
   min-height: 945px;    
   display: flex;
@@ -200,7 +203,7 @@ a:hover { color: var(--accent-hover); }
 
 /* ── Home / Search Page ── */
 #page-home {
-  padding: 80px 24px 40px;
+  flex: 1; /* a */
 }
 .home-hero {
   text-align: center;
