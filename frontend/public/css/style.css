@@ -77,12 +77,12 @@ a:hover { color: var(--accent-hover); }
 }
 
 .logo {
-  font-weight: 600;
-  font-size: 1.1rem;
-  color: var(--text);
-  letter-spacing: -0.02em;
-  text-decoration: none;
-  flex-shrink: 0;
+  display: flex;
+  justify-content: center; /* centers horizontally prob?? */
+  align-items: center;
+  width: 100%;
+}
+
 }
 .logo span { color: var(--accent); }
 /* above prob useless but keeping for support*/
@@ -90,8 +90,7 @@ a:hover { color: var(--accent-hover); }
 .logo img {
   height: 160px;
   width: auto;
-  display: block;
-  margin: 0 auto; /* a */
+  display: inline-block;
 }
 
 .header-search {
