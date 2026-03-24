@@ -186,9 +186,10 @@ a:hover { color: var(--accent-hover); }
   justify-content: space-between;
 }
 .page.active {
-  min-height: 945px;
+  min-height: 945px;    
   display: flex;
   flex-direction: column;
+  justify-content: space-between; /* same = better? */
 }
 
 .container {
@@ -930,7 +931,7 @@ tbody td.text-mono {
 #site-footer {
   border-top: 1px solid var(--border);
   background: var(--bg-card);
-  margin-top: auto;
+  margin-top: 0; /* fah */
 }
 .footer-inner {
   max-width: 1100px;
