@@ -63,32 +63,36 @@ a:hover { color: var(--accent-hover); }
 
 /* ── Header ── */
 #header {
-  height: auto;
+  height: 56px;
   padding: 0;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-/* the free space between the logo is a pain in the to remove */
-
 .header-inner {
-  height: auto;
-  padding: 0;
+  height: 56px;
+  padding: 0 20px;
   display: flex;
-  align-items: center; /* idk*/
+  align-items: center;
+  gap: 16px;
+  max-width: 1440px;
+  margin: 0 auto;
 }
 
 .logo {
   display: flex;
-  justify-content: center; /* centers horizontally prob?? */
   align-items: center;
-  width: 100%;
+  flex-shrink: 0;
+  width: auto;
 }
 
-}
 .logo span { color: var(--accent); }
-/* above prob useless but keeping for support*/
 
 .logo img {
-  height: 160px;
+  height: 32px;
   width: auto;
   display: inline-block;
 }
